@@ -11,3 +11,9 @@ wheels/
 
 # Environment variables
 .env
+
+# calculator test app
+calculator/
+
+# IDE files
+.vscode/
