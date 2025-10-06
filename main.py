@@ -23,8 +23,11 @@ def main():
     print(response.text)
     if command_flag == "--verbose":
         print(f"User prompt: {user_prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+        if response.usage_metadata:
+            print(f"Prompt tokens: {getattr(response.usage_metadata, 'prompt_token_count', 'N/A')}")
+            print(f"Response tokens: {getattr(response.usage_metadata, 'candidates_token_count', 'N/A')}")
+        else:
+            print("Usage metadata not available.")
 
 
 if __name__ == "__main__":
