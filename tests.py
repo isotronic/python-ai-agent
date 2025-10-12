@@ -2,6 +2,8 @@ import pytest
 import os
 from pathlib import Path
 from functions.get_files_info import get_files_info
+from functions.get_file_content import get_file_content
+from config import MAX
 
 
 class TestGetFilesInfo:
@@ -136,6 +138,69 @@ class TestGetFilesInfo:
         print("=" * 40)
         return result
 
+
+def _print_test_result(header: str, result: str):
+    """Helper to print test headers and results consistently."""
+    print("\n" + header)
+    print(result)
+    print("=" * 40)
+
+
+class TestGetFileContent:
+        """Tests for get_file_content using the calculator package."""
+
+        @pytest.fixture
+        def calculator_dir(self):
+            return str(Path(__file__).parent / "calculator")
+
+        def test_read_small_file(self, calculator_dir):
+            # Read an existing small file (main.py)
+            path = os.path.join(calculator_dir, "main.py")
+            result = get_file_content(calculator_dir, path)
+            _print_test_result("=== Test: Read small file (main.py) ===", result)
+            assert isinstance(result, str)
+            assert "def" in result or "import" in result or len(result) > 0
+
+        def test_read_long_file_truncated(self, calculator_dir):
+            # Read the long file which should be truncated at MAX
+            path = os.path.join(calculator_dir, "long.txt")
+            result = get_file_content(calculator_dir, path)
+            _print_test_result("=== Test: Read long file (long.txt) ===", result)
+            assert isinstance(result, str)
+            # Should include truncation marker when file is longer than MAX
+            if os.path.getsize(path) > MAX:
+                assert "truncated" in result or "[...]" in result
+            # Ensure returned content length is at most MAX plus marker
+            assert len(result) <= MAX + 200
+
+        def test_path_traversal_outside(self, calculator_dir):
+            # Attempt to read /bin/ls should be denied
+            outside = "/bin/ls"
+            result = get_file_content(calculator_dir, outside)
+            _print_test_result("=== Test: Path Traversal to /bin (get_file_content) ===", result)
+            assert "Error: Cannot read" in result
+            assert "outside the permitted working directory" in result
+
+        def test_nonexistent_file(self, calculator_dir):
+            path = os.path.join(calculator_dir, "does_not_exist.txt")
+            result = get_file_content(calculator_dir, path)
+            _print_test_result("=== Test: Non-existent File (get_file_content) ===", result)
+            assert "Error: File not found" in result or "is not a regular file" in result
+
+        def test_read_directory_instead_of_file(self, calculator_dir):
+            # Passing a directory path should report not a regular file
+            result = get_file_content(calculator_dir, calculator_dir)
+            _print_test_result("=== Test: Read directory instead of file (get_file_content) ===", result)
+            assert "Error: File not found" in result or "is not a regular file" in result
+
+        def test_read_pkg_calculator(self, calculator_dir):
+            # Read the calculator module inside pkg
+            path = os.path.join(calculator_dir, "pkg", "calculator.py")
+            result = get_file_content(calculator_dir, path)
+            _print_test_result("=== Test: Read pkg/calculator.py ===", result)
+            assert isinstance(result, str)
+            assert "class Calculator" in result
+            assert "def evaluate" in result or "def _evaluate_infix" in result
 
 if __name__ == "__main__":
     # Run tests with pytest
