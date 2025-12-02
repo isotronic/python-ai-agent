@@ -1,1 +1,2 @@
 MAX = 10000
+MAX_ITERS = 20
