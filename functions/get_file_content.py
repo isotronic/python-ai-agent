@@ -17,16 +17,17 @@ schema_get_file_content = types.FunctionDeclaration(
 )
 
 def get_file_content(working_directory, file_path):
-  full_file_path = os.path.abspath(file_path)
+  working_directory_abs = os.path.abspath(working_directory)
+  full_file_path = os.path.abspath(os.path.join(working_directory_abs, file_path))
   
-  if not full_file_path.startswith(working_directory):
+  if not full_file_path.startswith(working_directory_abs):
     return f"Error: Cannot read '{file_path}' as it is outside the permitted working directory"
   
-  if not os.path.isfile(file_path):
+  if not os.path.isfile(full_file_path):
     return f"Error: File not found or is not a regular file: '{file_path}'"
   
   try:
-    with open(file_path, "r") as f:
+    with open(full_file_path, "r") as f:
       file_contents = f.read(MAX)
       if more_contents := f.read(1):
         file_contents += f"[...File '{file_path}' truncated at {MAX} characters]"
