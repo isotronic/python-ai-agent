@@ -8,6 +8,7 @@ from functions.get_files_info import schema_get_files_info
 from functions.write_file import schema_write_file
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
+from call_function import call_function
 
 load_dotenv()  # Load environment variables from a .env file if present
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -33,8 +34,18 @@ def main():
   )
   
   if response.function_calls:
+    function_responses = []
+    
     for function_call in response.function_calls:
-      print(f"Calling function: {function_call.name}({function_call.args})")
+      call_function_result = call_function(function_call, verbose=(command_flag == "--verbose"))
+      
+      if not call_function_result or not call_function_result.parts or not call_function_result.parts[0].function_response or not call_function_result.parts[0].function_response.response:
+        raise ValueError("No valid response from function call.")
+      
+      function_responses.append(call_function_result.parts[0].function_response.response)
+      
+      if command_flag == "--verbose":
+        print(f"-> {call_function_result.parts[0].function_response.response}")
 
   print(response.text)
   
