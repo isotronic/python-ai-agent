@@ -4,6 +4,7 @@ from pathlib import Path
 from functions.get_files_info import get_files_info
 from functions.get_file_content import get_file_content
 from functions.write_file import write_file
+from functions.run_python_file import run_python_file
 from config import MAX
 
 
@@ -218,6 +219,52 @@ class TestWriteFile:
         res = write_file(calculator_dir, p, "this should not be allowed")
         _print_test_result("=== Test: write_file to /tmp/temp.txt ===", res)
         assert "outside the permitted working directory" in res
+
+
+class TestRunPythonFile:
+    """Tests for the run_python_file function."""
+
+    @pytest.fixture
+    def calculator_dir(self):
+        """Return the path to the calculator directory."""
+        return str(Path(__file__).parent / "calculator")
+
+    def test_run_main_no_args(self, calculator_dir):
+        """Test running main.py without arguments."""
+        result = run_python_file(calculator_dir, "main.py")
+        _print_test_result("=== Test: run_python_file('calculator', 'main.py') ===", result)
+        assert "Usage:" in result or "usage:" in result
+
+    def test_run_main_with_args(self, calculator_dir):
+        """Test running main.py with arguments."""
+        result = run_python_file(calculator_dir, "main.py", ["3 + 5"])
+        _print_test_result("=== Test: run_python_file('calculator', 'main.py', ['3 + 5']) ===", result)
+        assert "8" in result or "Result:" in result
+
+    def test_run_tests_py(self, calculator_dir):
+        """Test running tests.py."""
+        result = run_python_file(calculator_dir, "tests.py")
+        _print_test_result("=== Test: run_python_file('calculator', 'tests.py') ===", result)
+        assert "test" in result.lower() or "passed" in result.lower()
+
+    def test_run_outside_directory(self, calculator_dir):
+        """Test trying to run a file outside the working directory."""
+        result = run_python_file(calculator_dir, "../main.py")
+        _print_test_result("=== Test: run_python_file('calculator', '../main.py') ===", result)
+        assert "Error:" in result or "outside the permitted working directory" in result
+
+    def test_run_nonexistent_file(self, calculator_dir):
+        """Test trying to run a nonexistent file."""
+        result = run_python_file(calculator_dir, "nonexistent.py")
+        _print_test_result("=== Test: run_python_file('calculator', 'nonexistent.py') ===", result)
+        assert "Error:" in result or "not found" in result
+
+    def test_run_non_python_file(self, calculator_dir):
+        """Test trying to run a non-Python file."""
+        result = run_python_file(calculator_dir, "lorem.txt")
+        _print_test_result("=== Test: run_python_file('calculator', 'lorem.txt') ===", result)
+        assert "Error:" in result or "not a Python file" in result
+
 
 if __name__ == "__main__":
     # Run tests with pytest
